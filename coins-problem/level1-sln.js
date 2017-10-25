@@ -8,7 +8,7 @@ function range(min, count) {
     return result
 }
 
-function determineCoinInterval(scale, left, right, excluded) {
+function determineCoinBag(scale, left, right, excluded) {
     let result = scale.weigh(left, right)
     if(result == "side1")
         return right
@@ -17,46 +17,30 @@ function determineCoinInterval(scale, left, right, excluded) {
     return excluded
 }
 
-function searchInterval(scale, min, max) {
-    // If there is only one coin in this interval
-    // then we have found what we're looking for
-    if(max === min)
-        return min
+function searchInterval(scale, coins) {
+    // If there is just one coin, we've foind it
+    if(coins.length == 1)
+        return coins[0]
     
-    // If there are two coins, weigh them both
-    // and determine which is wrong
-    if(max == min + 1) {
-        let result = scale.weigh([min], [max])
-        if(result == "side1")
-            return max
-        if(result == "side2")
-            return min
-        
-        throw "Coin is not in this interval!"
-    }
+    // Divide the coins up into 3 bags as equally as possible
+    let cns = coins.slice()
+    let bag1 = cns.splice(0, Math.floor(cns.length / 3))
+    let bag2 = cns.splice(0, Math.floor(cns.length / 2))
+    let bag3 = cns
 
-    // Divide the coins up into 3 intervals as
-    // equally as possible
-    let count = 1 + max - min
-    let baseSize = Math.floor(count / 3)
-    let interval1 = range(min, baseSize + (count % 3 > 0 ? 1 : 0))
-    let interval2 = range(interval1[interval1.length - 1] + 1, baseSize + (count % 3 > 1 ? 1 : 0))
-    let interval3 = range(interval2[interval2.length - 1] + 1, baseSize)
-
-    // weigh the equally sized intervals
+    // find which bag the coin is in and continue the search
     let next = undefined
-    if(interval1.length == interval2.length) {
-        next = determineCoinInterval(scale, interval1, interval2, interval3)
+    if(bag1.length == bag2.length) {
+        next = determineCoinBag(scale, bag1, bag2, bag3)
     } else {
-        next = determineCoinInterval(scale, interval2, interval3, interval1)
+        next = determineCoinBag(scale, bag2, bag3, bag1)
     }
 
-    return searchInterval(scale, next[0], next[next.length - 1])
+    return searchInterval(scale, next)
 }
 
 function findCoin(scale) {
-    return searchInterval(scale, 0, scale.numberOfCoins - 1)
+    return searchInterval(scale, range(0, scale.numberOfCoins))
 }
-
 
 scale.testLevel1Solution(findCoin)
